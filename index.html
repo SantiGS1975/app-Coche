@@ -1,0 +1,730 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Gastos del coche</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: una sola columna de trabajo. Cabecera con la acción principal (escanear), resumen en cifras,
+   gráfico mensual y desglose por categoría, y el libro de gastos debajo. */
+:root {
+  --bg: #f2f3ef;
+  --surface: #fbfbf9;
+  --ink: #1b2428;
+  --muted: #5d6a6f;
+  --line: #d9ddd6;
+  --accent: #0e6a5b;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcebe7;
+  --warn: #9a4a08;
+  --warn-soft: #f6e6d4;
+  --danger: #b3261e;
+  --bar: #0e6a5b;
+  --bar-dim: #b9d3cc;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181a; --surface: #182124; --ink: #e8eeec; --muted: #94a4a4; --line: #2a373a;
+    --accent: #4fc3ac; --accent-ink: #08201b; --accent-soft: #1d3834; --warn: #f0a35a; --warn-soft: #3a2a18;
+    --danger: #ff8a80; --bar: #4fc3ac; --bar-dim: #29504a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181a; --surface: #182124; --ink: #e8eeec; --muted: #94a4a4; --line: #2a373a;
+  --accent: #4fc3ac; --accent-ink: #08201b; --accent-soft: #1d3834; --warn: #f0a35a; --warn-soft: #3a2a18;
+  --danger: #ff8a80; --bar: #4fc3ac; --bar-dim: #29504a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 { font-size: 34px; line-height: 1; }
+h2 { font-size: 22px; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; }
+.num { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 600; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-end; justify-content: space-between; }
+header .sub { color: var(--muted); margin-top: 4px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface); padding: 10px 16px; border-radius: 6px; font-weight: 500; min-height: 42px;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--danger); }
+.btn[disabled] { opacity: .55; cursor: default; }
+.btn.small { min-height: 34px; padding: 6px 12px; font-size: 14px; }
+
+.notice { border: 1px solid var(--line); background: var(--warn-soft); color: var(--warn); padding: 10px 14px; border-radius: 6px; font-size: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+
+/* Editor de ticket */
+.editor { display: flex; flex-direction: column; gap: 16px; }
+.editor-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field input, .field select, .linerow input, .linerow select {
+  width: 100%; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 9px 10px; min-height: 40px;
+}
+.lines { display: flex; flex-direction: column; gap: 10px; }
+.linerow {
+  display: grid; grid-template-columns: 150px 1fr 90px 100px 36px; gap: 8px; align-items: center;
+  padding: 10px; border: 1px solid var(--line); border-radius: 6px;
+}
+.linerow .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; min-height: 36px; border-radius: 6px; }
+.linerow .x:hover { color: var(--danger); }
+.linerow .liters-slot { min-height: 1px; }
+.linerow input.right { text-align: right; }
+.editor-foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.sumline { color: var(--muted); font-size: 14px; }
+.sumline strong { color: var(--ink); }
+.msg { font-size: 14px; }
+.msg.err { color: var(--danger); }
+.msg.warn { color: var(--warn); }
+
+.scanbox {
+  border: 1.5px dashed var(--line); border-radius: 8px; padding: 22px 18px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  background: var(--surface);
+}
+.scanbox.drag { border-color: var(--accent); background: var(--accent-soft); }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; vertical-align: -3px; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+/* Resumen */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile .big { font-size: 34px; line-height: 1.05; }
+.tile .big small { font-size: 16px; color: var(--muted); font-weight: 500; margin-left: 2px; }
+.tile .hint { font-size: 12px; color: var(--muted); }
+
+.section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.section-head select { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 7px 10px; min-height: 36px; }
+
+.months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; align-items: end; height: 170px; }
+.mcol { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 4px; min-width: 0; }
+.mcol .v { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; height: 12px; white-space: nowrap; }
+.mcol .bar { width: 100%; background: var(--bar-dim); border-radius: 3px 3px 0 0; min-height: 2px; }
+.mcol.cur .bar { background: var(--bar); }
+.mlabels { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; margin-top: 6px; border-top: 1px solid var(--line); padding-top: 6px; }
+.mlabels span { text-align: center; font-size: 11px; color: var(--muted); text-transform: uppercase; }
+
+.cats { display: flex; flex-direction: column; gap: 10px; }
+.cat { display: grid; grid-template-columns: 120px 1fr auto; gap: 10px; align-items: center; }
+.cat .track { background: var(--bg); border-radius: 3px; height: 12px; overflow: hidden; }
+.cat .fill { background: var(--bar); height: 100%; }
+.cat .amt { font-size: 15px; text-align: right; min-width: 84px; }
+.cat .name { font-size: 14px; }
+
+/* Libro de gastos */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.list { display: flex; flex-direction: column; }
+.row {
+  display: grid; grid-template-columns: 64px 1fr auto; gap: 4px 14px; align-items: center; padding: 11px 4px; border-top: 1px solid var(--line);
+  background: transparent; border-left: 0; border-right: 0; border-bottom: 0; width: 100%; text-align: left; border-radius: 0;
+}
+.row:hover { background: var(--accent-soft); }
+.row .d { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.row .t { min-width: 0; }
+.row .t b { font-weight: 500; }
+.row .t span { display: block; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.row .a { font-size: 20px; text-align: right; }
+.pill { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; background: var(--accent-soft); color: var(--accent); padding: 1px 7px; border-radius: 99px; margin-right: 6px; font-weight: 600; }
+.empty { padding: 28px 8px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+.empty b { color: var(--ink); font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+.foot { font-size: 12px; color: var(--muted); }
+
+@media (max-width: 640px) {
+  h1 { font-size: 30px; }
+  .linerow { grid-template-columns: 1fr 1fr; }
+  .linerow .desc { grid-column: 1 / -1; }
+  .linerow .x { justify-self: end; }
+  .cat { grid-template-columns: 1fr auto; }
+  .cat .track { grid-column: 1 / -1; order: 3; }
+  .mcol .v { font-size: 9px; }
+  .row { grid-template-columns: 52px 1fr auto; gap: 4px 10px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Gastos del coche</h1>
+      <div class="sub">Fotografía un ticket o una factura y se apuntan los gastos.</div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btnScan" type="button">Escanear ticket</button>
+      <button class="btn" id="btnManual" type="button">Añadir a mano</button>
+    </div>
+  </header>
+
+  <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+  <div id="notice" class="notice" hidden></div>
+  <div id="scanArea" hidden></div>
+  <div id="editorArea" hidden></div>
+
+  <section class="tiles" id="tiles" aria-label="Resumen"></section>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>Gasto por mes</h2>
+      <label class="label" for="yearSel">Año <select id="yearSel"></select></label>
+    </div>
+    <div class="months" id="months"></div>
+    <div class="mlabels" id="mlabels"></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head"><h2>Por categoría</h2><span class="label" id="catTotal"></span></div>
+    <div class="cats" id="cats"></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>Gastos registrados</h2>
+      <div class="actions">
+        <select id="catFilter" aria-label="Filtrar por categoría"></select>
+        <button class="btn small" id="btnCsv" type="button" hidden>Descargar CSV</button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var CATS = [
+    { id: "combustible", name: "Combustible" },
+    { id: "mantenimiento", name: "Mantenimiento" },
+    { id: "reparacion", name: "Reparación" },
+    { id: "neumaticos", name: "Neumáticos" },
+    { id: "seguro", name: "Seguro" },
+    { id: "impuestos", name: "Impuestos" },
+    { id: "itv", name: "ITV" },
+    { id: "peajes", name: "Peajes" },
+    { id: "parking", name: "Parking" },
+    { id: "lavado", name: "Lavado" },
+    { id: "multas", name: "Multas" },
+    { id: "otros", name: "Otros" }
+  ];
+  var CAT_NAME = {};
+  CATS.forEach(function (c) { CAT_NAME[c.id] = c.name; });
+  var MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+  var eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
+  var eur0 = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 });
+  var dec1 = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var dec2 = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var dec3 = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  var intf = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 });
+
+  function $(id) { return document.getElementById(id); }
+  function h(tag, attrs, kids) {
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === "class") el.className = attrs[k];
+      else if (k === "text") el.textContent = attrs[k];
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== false && attrs[k] != null) el.setAttribute(k, attrs[k] === true ? "" : attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c != null) el.append(c.nodeType ? c : document.createTextNode(c)); });
+    return el;
+  }
+  function num(s) {
+    if (s == null || s === "") return null;
+    var n = parseFloat(String(s).replace(/\s/g, "").replace(",", "."));
+    return isFinite(n) ? n : null;
+  }
+  function todayIso() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function validDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s || "") && !isNaN(new Date(s + "T00:00:00")); }
+  function shortDate(iso) {
+    var p = iso.split("-");
+    return p[2] + " " + MONTHS[+p[1] - 1] + (p[0] !== String(new Date().getFullYear()) ? " " + p[0].slice(2) : "");
+  }
+  function uid() { return "x" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+  function r2(n) { return Math.round(n * 100) / 100; }
+
+  /* ---------- Estado y almacenamiento ---------- */
+  var expenses = [];
+  var year = new Date().getFullYear();
+  var catFilter = "all";
+  var store = null;          // {add, set, remove}
+  var persistent = false;
+  var sample = null, sampleCaps = null, downloads = null;
+  var loaded = false;
+  var ed = null;             // editor activo
+  var scanCtl = null;
+
+  function localStore() {
+    return {
+      add: function (o) { var id = uid(); expenses.push(Object.assign({ id: id }, o)); render(); return Promise.resolve(); },
+      set: function (id, o) { expenses = expenses.map(function (e) { return e.id === id ? Object.assign({ id: id }, o) : e; }); render(); return Promise.resolve(); },
+      remove: function (id) { expenses = expenses.filter(function (e) { return e.id !== id; }); render(); return Promise.resolve(); }
+    };
+  }
+
+  function use(name) {
+    if (!window.claude || !window.claude.use) return Promise.resolve(null);
+    return window.claude.use(name).catch(function () { return null; });
+  }
+
+  async function init() {
+    var res = await Promise.all([use("db"), use("user"), use("sample"), use("downloads")]);
+    var db = res[0], user = res[1];
+    sample = res[2]; downloads = res[3];
+    if (sample) {
+      try { sampleCaps = await sample.limits(); } catch (e) { sampleCaps = null; }
+      if (sampleCaps && sampleCaps.images && sampleCaps.images.mediaTypes) {
+        $("fileInput").setAttribute("accept", sampleCaps.images.mediaTypes.join(","));
+      }
+    }
+    var id = null;
+    if (db && user) { try { id = await user.id(); } catch (e) { id = null; } }
+    if (db && id) {
+      var col = db.doc("data/users/" + id + "/car").collection("expenses");
+      persistent = true;
+      store = {
+        add: function (o) { return col.add(o).then(function () {}); },
+        set: function (eid, o) { return col.doc(eid).set(o); },
+        remove: function (eid) { return col.doc(eid).delete(); }
+      };
+      col.orderBy("date", "desc").limit(1000).onSnapshot(function (snap) {
+        expenses = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+        loaded = true; render();
+      }, function () {
+        persistent = false; store = localStore(); loaded = true; render();
+      });
+    } else {
+      store = localStore(); loaded = true;
+    }
+    render();
+  }
+
+  /* ---------- Cálculos ---------- */
+  function yearsAvailable() {
+    var set = {}; set[new Date().getFullYear()] = 1;
+    expenses.forEach(function (e) { if (e.date) set[e.date.slice(0, 4)] = 1; });
+    return Object.keys(set).map(Number).sort(function (a, b) { return b - a; });
+  }
+  function inYear(y) { return expenses.filter(function (e) { return e.date && e.date.indexOf(String(y)) === 0; }); }
+  function sum(list) { return list.reduce(function (a, e) { return a + (e.amount || 0); }, 0); }
+
+  function stats() {
+    var ye = inYear(year);
+    var now = new Date();
+    var monthKey = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+    var month = expenses.filter(function (e) { return e.date && e.date.indexOf(monthKey) === 0; });
+    var out = { yearTotal: sum(ye), monthTotal: sum(month), per100: null, consumption: null, lastPrice: null };
+
+    var withKm = expenses.filter(function (e) { return e.odometer > 0 && e.date; });
+    if (withKm.length >= 2) {
+      var lo = withKm.reduce(function (a, b) { return b.odometer < a.odometer ? b : a; });
+      var hi = withKm.reduce(function (a, b) { return b.odometer > a.odometer ? b : a; });
+      var km = hi.odometer - lo.odometer;
+      if (km >= 50) {
+        var a = lo.date <= hi.date ? lo.date : hi.date, b = lo.date <= hi.date ? hi.date : lo.date;
+        var tot = sum(expenses.filter(function (e) { return e.date >= a && e.date <= b; }));
+        out.per100 = tot / km * 100;
+        out.km = km;
+      }
+    }
+    var fuel = expenses.filter(function (e) { return e.category === "combustible" && e.liters > 0 && e.odometer > 0; })
+      .sort(function (x, y) { return x.odometer - y.odometer; });
+    if (fuel.length >= 2) {
+      var kmF = fuel[fuel.length - 1].odometer - fuel[0].odometer;
+      var lit = 0;
+      for (var i = 1; i < fuel.length; i++) lit += fuel[i].liters;
+      if (kmF >= 50 && lit > 0) out.consumption = lit / kmF * 100;
+    }
+    var fuelPrice = expenses.filter(function (e) { return e.category === "combustible" && e.liters > 0 && e.amount > 0 && e.date; })
+      .sort(function (x, y) { return y.date.localeCompare(x.date); })[0];
+    if (fuelPrice) out.lastPrice = fuelPrice.amount / fuelPrice.liters;
+    return out;
+  }
+
+  /* ---------- Render ---------- */
+  function render() {
+    renderNotice();
+    renderTiles();
+    renderYear();
+    renderMonths();
+    renderCats();
+    renderList();
+    $("btnCsv").hidden = !(downloads && expenses.length);
+    $("btnScan").disabled = !sample;
+    $("btnScan").title = sample ? "" : "La lectura de tickets no está disponible en esta vista";
+    $("foot").textContent = expenses.length ? intf.format(expenses.length) + " gastos guardados en tu cuenta. Solo tú los ves." : "";
+    if (!persistent && loaded) $("foot").textContent = "";
+  }
+
+  function renderNotice() {
+    var n = $("notice");
+    if (loaded && !persistent) {
+      n.hidden = false;
+      n.textContent = "Los gastos no se están guardando: abre la página con tu cuenta de Claude para que queden guardados. Lo que añadas ahora se pierde al cerrar.";
+    } else if (loaded && !sample) {
+      n.hidden = false;
+      n.textContent = "La lectura de tickets no está disponible en esta vista. Puedes añadir los gastos a mano.";
+    } else n.hidden = true;
+  }
+
+  function tile(label, big, unit, hint) {
+    return h("div", { class: "tile" }, [
+      h("span", { class: "label", text: label }),
+      h("div", { class: "big num" }, [big, unit ? h("small", { text: unit }) : null]),
+      h("span", { class: "hint", text: hint || "" })
+    ]);
+  }
+  function renderTiles() {
+    var s = stats(), t = $("tiles");
+    t.replaceChildren(
+      tile("Este mes", eur.format(s.monthTotal), "", "Gasto total del mes en curso"),
+      tile("Año " + year, eur.format(s.yearTotal), "", inYear(year).length + " gastos"),
+      tile("Coste por 100 km", s.per100 != null ? dec2.format(s.per100) : "–", s.per100 != null ? "€" : "",
+        s.per100 != null ? "Sobre " + intf.format(s.km) + " km con kilometraje" : "Necesita dos gastos con kilometraje"),
+      tile("Consumo medio", s.consumption != null ? dec1.format(s.consumption) : "–", s.consumption != null ? "l/100 km" : "",
+        s.consumption != null ? "Estimado entre repostajes" : "Necesita dos repostajes con km y litros"),
+      tile("Último precio", s.lastPrice != null ? dec3.format(s.lastPrice) : "–", s.lastPrice != null ? "€/l" : "", "Del último repostaje")
+    );
+  }
+
+  function renderYear() {
+    var sel = $("yearSel"), ys = yearsAvailable();
+    if (ys.indexOf(year) < 0) ys.unshift(year);
+    sel.replaceChildren.apply(sel, ys.map(function (y) { return h("option", { value: String(y), text: String(y), selected: y === year }); }));
+  }
+
+  function renderMonths() {
+    var totals = new Array(12).fill(0);
+    inYear(year).forEach(function (e) { totals[+e.date.slice(5, 7) - 1] += e.amount || 0; });
+    var max = Math.max.apply(null, totals.concat([1]));
+    var nowM = new Date().getFullYear() === year ? new Date().getMonth() : -1;
+    $("months").replaceChildren.apply($("months"), totals.map(function (v, i) {
+      return h("div", { class: "mcol" + (i === nowM ? " cur" : ""), title: MONTHS[i] + " " + year + ": " + eur.format(v) }, [
+        h("div", { class: "v", text: v > 0 ? eur0.format(v) : "" }),
+        h("div", { class: "bar", style: "height:" + (v > 0 ? Math.max(2, v / max * 128) : 2) + "px" })
+      ]);
+    }));
+    $("mlabels").replaceChildren.apply($("mlabels"), MONTHS.map(function (m) { return h("span", { text: m }); }));
+  }
+
+  function renderCats() {
+    var by = {};
+    inYear(year).forEach(function (e) { var c = e.category || "otros"; by[c] = (by[c] || 0) + (e.amount || 0); });
+    var rows = Object.keys(by).map(function (k) { return { id: k, v: by[k] }; }).sort(function (a, b) { return b.v - a.v; });
+    var total = rows.reduce(function (a, r) { return a + r.v; }, 0);
+    $("catTotal").textContent = total ? eur.format(total) : "";
+    var box = $("cats");
+    if (!rows.length) { box.replaceChildren(h("div", { class: "foot", text: "Sin gastos en " + year + "." })); return; }
+    var max = rows[0].v;
+    box.replaceChildren.apply(box, rows.map(function (r) {
+      return h("div", { class: "cat" }, [
+        h("span", { class: "name", text: CAT_NAME[r.id] || r.id }),
+        h("span", { class: "amt num", text: eur.format(r.v) + " · " + Math.round(r.v / total * 100) + " %" }),
+        h("div", { class: "track" }, [h("div", { class: "fill", style: "width:" + (r.v / max * 100) + "%" })])
+      ]);
+    }));
+  }
+
+  function renderList() {
+    var sel = $("catFilter");
+    var opts = [h("option", { value: "all", text: "Todas las categorías", selected: catFilter === "all" })]
+      .concat(CATS.map(function (c) { return h("option", { value: c.id, text: c.name, selected: catFilter === c.id }); }));
+    sel.replaceChildren.apply(sel, opts);
+
+    var box = $("list");
+    if (!loaded) { box.replaceChildren(h("div", { class: "empty", text: "Cargando tus gastos…" })); return; }
+    var list = expenses.filter(function (e) { return catFilter === "all" || e.category === catFilter; })
+      .sort(function (a, b) { return (b.date || "").localeCompare(a.date || "") || (b.createdAt || 0) - (a.createdAt || 0); });
+    if (!list.length) {
+      box.replaceChildren(h("div", { class: "empty" }, expenses.length ? [h("span", { text: "No hay gastos en esta categoría." })] : [
+        h("b", { text: "Todavía no hay gastos" }),
+        h("span", { text: "Pulsa «Escanear ticket» y elige una foto de un ticket de gasolina o de una factura de taller. También puedes añadir un gasto a mano." })
+      ]));
+      return;
+    }
+    box.replaceChildren.apply(box, list.map(function (e) {
+      var extra = [];
+      if (e.liters > 0) extra.push(dec2.format(e.liters) + " l" + (e.amount > 0 ? " a " + dec3.format(e.amount / e.liters) + " €/l" : ""));
+      if (e.odometer > 0) extra.push(intf.format(e.odometer) + " km");
+      return h("button", { class: "row", type: "button", onclick: function () { openEditor(editFrom(e)); } }, [
+        h("span", { class: "d", text: e.date ? shortDate(e.date) : "" }),
+        h("span", { class: "t" }, [
+          h("b", { text: e.vendor || e.description || CAT_NAME[e.category] || "Gasto" }),
+          h("span", {}, [h("i", { class: "pill", text: CAT_NAME[e.category] || "Otros" }),
+            (e.vendor && e.description ? e.description : "") + (extra.length ? (e.vendor && e.description ? " · " : "") + extra.join(" · ") : "")])
+        ]),
+        h("span", { class: "a num", text: eur.format(e.amount || 0) })
+      ]);
+    }));
+  }
+
+  /* ---------- Editor ---------- */
+  function editFrom(e) {
+    return {
+      mode: "edit", id: e.id, receiptId: e.receiptId || null, createdAt: e.createdAt || Date.now(),
+      vendor: e.vendor || "", date: e.date || todayIso(), odometer: e.odometer ? String(e.odometer) : "",
+      total: null, notes: [],
+      lines: [{ category: e.category || "otros", description: e.description || "", amount: e.amount != null ? String(e.amount).replace(".", ",") : "", liters: e.liters ? String(e.liters).replace(".", ",") : "" }]
+    };
+  }
+  function blankEditor() {
+    return { mode: "new", receiptId: null, vendor: "", date: todayIso(), odometer: "", total: null, notes: [],
+      lines: [{ category: "combustible", description: "", amount: "", liters: "" }] };
+  }
+  function openEditor(state) {
+    ed = state;
+    $("scanArea").hidden = true;
+    renderEditor();
+    $("editorArea").hidden = false;
+    $("editorArea").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function closeEditor() { ed = null; $("editorArea").hidden = true; $("editorArea").replaceChildren(); }
+
+  function lineSum() { return ed.lines.reduce(function (a, l) { return a + (num(l.amount) || 0); }, 0); }
+  function refreshSum() {
+    var el = $("edSum"); if (!el) return;
+    var s = lineSum();
+    el.replaceChildren("Suma de líneas: ", h("strong", { class: "num", text: eur.format(s) }));
+    if (ed.total != null && Math.abs(s - ed.total) > 0.02) {
+      el.append(" · el documento indica " + eur.format(ed.total));
+    }
+  }
+
+  function renderEditor() {
+    var area = $("editorArea");
+    var isNew = ed.mode === "new";
+    var head = h("div", { class: "editor-head" }, [
+      h("h2", { text: isNew ? (ed.fromScan ? "Revisa lo que he leído" : "Nuevo gasto") : "Editar gasto" }),
+      h("span", { class: "label", text: isNew ? "Se guardará una línea por gasto" : "" })
+    ]);
+    var fVendor = h("input", { id: "edVendor", type: "text", value: ed.vendor, placeholder: "Repsol, Taller López…", oninput: function (e) { ed.vendor = e.target.value; } });
+    var fDate = h("input", { id: "edDate", type: "date", value: ed.date, oninput: function (e) { ed.date = e.target.value; } });
+    var fKm = h("input", { id: "edKm", type: "text", inputmode: "numeric", value: ed.odometer, placeholder: "Opcional", oninput: function (e) { ed.odometer = e.target.value; } });
+    var fields = h("div", { class: "fields" }, [
+      h("div", { class: "field" }, [h("label", { class: "label", for: "edVendor", text: "Comercio" }), fVendor]),
+      h("div", { class: "field" }, [h("label", { class: "label", for: "edDate", text: "Fecha" }), fDate]),
+      h("div", { class: "field" }, [h("label", { class: "label", for: "edKm", text: "Kilómetros del coche" }), fKm])
+    ]);
+
+    var lines = h("div", { class: "lines" });
+    ed.lines.forEach(function (l, i) {
+      var cat = h("select", { "aria-label": "Categoría", onchange: function (e) { l.category = e.target.value; renderLines(); } },
+        CATS.map(function (c) { return h("option", { value: c.id, text: c.name, selected: l.category === c.id }); }));
+      var desc = h("input", { class: "desc", type: "text", "aria-label": "Concepto", value: l.description, placeholder: "Concepto", oninput: function (e) { l.description = e.target.value; } });
+      var lit = l.category === "combustible"
+        ? h("input", { class: "right", type: "text", inputmode: "decimal", "aria-label": "Litros", value: l.liters, placeholder: "Litros", oninput: function (e) { l.liters = e.target.value; } })
+        : h("span", { class: "liters-slot" });
+      var amt = h("input", { class: "right", type: "text", inputmode: "decimal", "aria-label": "Importe en euros", value: l.amount, placeholder: "Importe €", oninput: function (e) { l.amount = e.target.value; refreshSum(); } });
+      var rm = ed.lines.length > 1 && ed.mode === "new"
+        ? h("button", { class: "x", type: "button", "aria-label": "Quitar línea", onclick: function () { ed.lines.splice(i, 1); renderLines(); refreshSum(); } , text: "×" })
+        : h("span");
+      lines.append(h("div", { class: "linerow" }, [cat, desc, lit, amt, rm]));
+    });
+
+    function renderLines() {
+      var keepFocus = document.activeElement && document.activeElement.id;
+      renderEditor();
+      if (keepFocus) { var f = document.getElementById(keepFocus); if (f) f.focus(); }
+    }
+
+    var notes = h("div", {}, (ed.notes || []).map(function (n) { return h("div", { class: "msg warn", text: n }); }));
+    var err = h("div", { class: "msg err", id: "edErr", role: "alert" });
+
+    var foot = h("div", { class: "editor-foot" }, [
+      h("div", { class: "sumline", id: "edSum" }),
+      h("div", { class: "actions" }, [
+        ed.mode === "edit" ? h("button", { class: "btn danger", type: "button", id: "edDelete", onclick: onDelete, text: "Eliminar" }) : null,
+        ed.mode === "new" ? h("button", { class: "btn", type: "button", onclick: function () {
+          ed.lines.push({ category: "otros", description: "", amount: "", liters: "" }); renderEditor();
+        }, text: "Añadir línea" }) : null,
+        h("button", { class: "btn ghost", type: "button", onclick: closeEditor, text: "Cancelar" }),
+        h("button", { class: "btn primary", type: "button", id: "edSave", onclick: onSave, text: ed.mode === "edit" ? "Guardar cambios" : "Guardar gastos" })
+      ])
+    ]);
+
+    area.replaceChildren(h("div", { class: "panel editor" }, [head, fields, notes, lines, err, foot]));
+    refreshSum();
+  }
+
+  async function onDelete() {
+    var btn = $("edDelete");
+    if (btn.dataset.sure !== "1") { btn.dataset.sure = "1"; btn.textContent = "Pulsa otra vez para eliminar"; return; }
+    btn.disabled = true;
+    try { await store.remove(ed.id); closeEditor(); }
+    catch (e) { $("edErr").textContent = "No se pudo eliminar. Inténtalo de nuevo."; btn.disabled = false; }
+  }
+
+  async function onSave() {
+    var err = $("edErr"); err.textContent = "";
+    if (!validDate(ed.date)) { err.textContent = "Pon una fecha válida."; return; }
+    var km = num(ed.odometer);
+    if (ed.odometer && (km == null || km < 0)) { err.textContent = "Los kilómetros deben ser un número."; return; }
+    var recs = [];
+    for (var i = 0; i < ed.lines.length; i++) {
+      var l = ed.lines[i], amount = num(l.amount);
+      if (amount == null || amount <= 0) { err.textContent = "Revisa el importe de la línea " + (i + 1) + ": tiene que ser mayor que 0."; return; }
+      var liters = l.category === "combustible" ? num(l.liters) : null;
+      if (l.category === "combustible" && l.liters && (liters == null || liters <= 0)) { err.textContent = "Revisa los litros de la línea " + (i + 1) + "."; return; }
+      recs.push({
+        date: ed.date, vendor: ed.vendor.trim(), category: l.category, description: l.description.trim(),
+        amount: r2(amount), liters: liters || null, odometer: km || null,
+        receiptId: ed.receiptId || (ed.mode === "new" && ed.lines.length > 1 ? "r" + uid() : null),
+        createdAt: ed.createdAt || Date.now()
+      });
+    }
+    var btn = $("edSave"); btn.disabled = true; btn.textContent = "Guardando…";
+    try {
+      if (ed.mode === "edit") await store.set(ed.id, recs[0]);
+      else for (var j = 0; j < recs.length; j++) await store.add(recs[j]);
+      closeEditor();
+    } catch (e) {
+      err.textContent = e && e.code === "quota_exceeded" ? "Se alcanzó el límite de gastos guardados." : "No se pudo guardar. Inténtalo de nuevo.";
+      btn.disabled = false; btn.textContent = ed.mode === "edit" ? "Guardar cambios" : "Guardar gastos";
+    }
+  }
+
+  /* ---------- Lectura de tickets ---------- */
+  var PROMPT = [
+    "Eres un lector de tickets y facturas de gastos de un coche en España. Te paso una o varias fotos del MISMO documento (páginas de un ticket o factura).",
+    "Extrae los gastos y responde SOLO con un objeto JSON con esta forma exacta:",
+    '{"comercio": string|null, "fecha": "AAAA-MM-DD"|null, "total": number|null, "kilometraje": number|null, "lineas": [{"categoria": string, "concepto": string, "importe": number, "litros": number|null}]}',
+    "Reglas:",
+    "- categoria es una de: " + CATS.map(function (c) { return c.id; }).join(", ") + ". Gasolina, diésel, gasoil, GLP o recarga eléctrica van en combustible. Aceite, filtros, revisión, pastillas de freno, batería y mano de obra de mantenimiento van en mantenimiento; averías y piezas de una reparación en reparacion; cubiertas y alineado en neumaticos; túnel de lavado en lavado.",
+    "- importe es el precio final en euros con IVA incluido, como número con punto decimal. Si el documento muestra la base y el IVA por separado, suma el IVA al importe de cada línea.",
+    "- En un ticket de gasolinera hay una sola línea de combustible: pon en litros los litros repostados y en importe el total pagado. Si también compraron otras cosas (tienda, lavado), ponlas en otras líneas con categoria otros o lavado.",
+    "- En una factura de taller separa las líneas relevantes (mano de obra, piezas, neumáticos…) y sus importes deben sumar el total. Descuentos como líneas con importe negativo.",
+    "- fecha en formato AAAA-MM-DD. Si el año tiene dos cifras, es 20XX; si no aparece el año, usa " + new Date().getFullYear() + ".",
+    "- kilometraje solo si aparece claramente en el documento (suele estar en facturas de taller); si no, null.",
+    "- Si no hay ningún gasto relacionado con un coche, devuelve lineas como lista vacía. No inventes datos que no se vean."
+  ].join("\n");
+
+  function scanMessage(el) { var a = $("scanArea"); a.hidden = false; a.replaceChildren(el); }
+  function scanError(text, offerManual) {
+    var kids = [h("div", { class: "msg err", role: "alert", text: text })];
+    var row = h("div", { class: "actions" }, [
+      h("button", { class: "btn primary", type: "button", onclick: function () { $("fileInput").click(); }, text: "Probar con otra foto" }),
+      offerManual ? h("button", { class: "btn", type: "button", onclick: function () { openEditor(blankEditor()); }, text: "Añadir a mano" }) : null,
+      h("button", { class: "btn ghost", type: "button", onclick: function () { $("scanArea").hidden = true; }, text: "Cerrar" })
+    ]);
+    kids.push(row);
+    scanMessage(h("div", { class: "scanbox" }, kids));
+  }
+  var ERR = {
+    not_granted: "Has rechazado el permiso para leer imágenes con Claude. Puedes añadir el gasto a mano.",
+    rate_limited: "Has llegado al límite de uso por ahora. Prueba más tarde o añade el gasto a mano.",
+    session_expired: "Tu sesión ha caducado. Vuelve a abrir la página e inicia sesión.",
+    image_rejected: "No puedo usar esa imagen. Prueba con una foto JPG, PNG o WebP de menos de 20 MB.",
+    refused: "No he podido leer ese documento. Prueba con otra foto.",
+    invalid_json: "No he conseguido entender el ticket. Prueba con una foto más cercana y con buena luz.",
+    empty_completion: "No he conseguido entender el ticket. Prueba con una foto más cercana y con buena luz."
+  };
+
+  async function scanFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    if (!sample || !sampleCaps || !sampleCaps.images) { scanError("La lectura de imágenes no está disponible en esta vista.", true); return; }
+    var max = sampleCaps.images.maxCount || 1;
+    var note = files.length > max ? "Solo he usado las " + max + " primeras fotos." : "";
+    files = files.slice(0, max);
+    closeEditor();
+    if (scanCtl) scanCtl.abort();
+    var ctl = new AbortController(); scanCtl = ctl;
+    var status = h("div", { class: "msg" }, [h("span", { class: "spinner" }), "Leyendo el ticket…"]);
+    scanMessage(h("div", { class: "scanbox" }, [
+      status,
+      h("button", { class: "btn small", type: "button", onclick: function () { ctl.abort(); }, text: "Cancelar" })
+    ]));
+    try {
+      var data = await sample.json(PROMPT, { images: files, signal: ctl.signal, modelTier: "default" });
+      if (scanCtl !== ctl) return;
+      var raw = Array.isArray(data) ? { lineas: data } : (data || {});
+      var lines = (Array.isArray(raw.lineas) ? raw.lineas : []).map(function (l) {
+        var amt = typeof l.importe === "number" ? l.importe : num(l.importe);
+        var lit = typeof l.litros === "number" ? l.litros : num(l.litros);
+        var cat = CAT_NAME[l.categoria] ? l.categoria : "otros";
+        return {
+          category: cat, description: String(l.concepto || "").slice(0, 120),
+          amount: amt != null ? String(r2(amt)).replace(".", ",") : "",
+          liters: cat === "combustible" && lit > 0 ? String(lit).replace(".", ",") : ""
+        };
+      }).filter(function (l) { return l.amount !== ""; });
+      if (!lines.length) { scanError("No he encontrado gastos del coche en esa imagen.", true); return; }
+      var date = validDate(raw.fecha) ? raw.fecha : null;
+      var notes = [];
+      if (note) notes.push(note);
+      if (!date) notes.push("No he encontrado la fecha en el documento. He puesto la de hoy: corrígela si hace falta.");
+      var total = typeof raw.total === "number" ? raw.total : num(raw.total);
+      var dup = expenses.some(function (e) {
+        return e.date === (date || todayIso()) && lines.some(function (l) { return Math.abs((e.amount || 0) - num(l.amount)) < 0.005; });
+      });
+      if (dup) notes.push("Ya tienes un gasto con esa fecha y ese importe. Comprueba que no lo estás duplicando.");
+      var state = {
+        mode: "new", fromScan: true, receiptId: lines.length > 1 ? "r" + uid() : null,
+        vendor: String(raw.comercio || "").slice(0, 80), date: date || todayIso(),
+        odometer: num(raw.kilometraje) > 0 ? String(Math.round(num(raw.kilometraje))) : "",
+        total: total != null ? total : null, notes: notes, lines: lines
+      };
+      $("scanArea").hidden = true;
+      openEditor(state);
+    } catch (e) {
+      if (scanCtl !== ctl) return;
+      if (e && e.code === "cancelled") { $("scanArea").hidden = true; return; }
+      scanError(ERR[e && e.code] || "No se pudo leer el ticket. Inténtalo de nuevo.", true);
+    }
+  }
+
+  /* ---------- CSV ---------- */
+  function csvCell(v) {
+    var s = v == null ? "" : String(v);
+    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  async function exportCsv() {
+    if (!downloads) return;
+    var head = ["Fecha", "Comercio", "Categoría", "Concepto", "Importe (€)", "Litros", "Kilómetros"];
+    var rows = expenses.slice().sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); }).map(function (e) {
+      return [e.date, e.vendor, CAT_NAME[e.category] || e.category, e.description,
+        e.amount != null ? String(e.amount).replace(".", ",") : "", e.liters ? String(e.liters).replace(".", ",") : "", e.odometer || ""];
+    });
+    var csv = "﻿" + [head].concat(rows).map(function (r) { return r.map(csvCell).join(";"); }).join("\r\n");
+    try { await downloads.save({ filename: "gastos-coche.csv", data: csv }); } catch (e) { /* el usuario puede cancelar */ }
+  }
+
+  /* ---------- Eventos ---------- */
+  $("btnScan").addEventListener("click", function () { $("fileInput").click(); });
+  $("btnManual").addEventListener("click", function () { $("scanArea").hidden = true; openEditor(blankEditor()); });
+  $("fileInput").addEventListener("change", function (e) { var f = e.target.files; scanFiles(f).then(function () { e.target.value = ""; }); });
+  $("yearSel").addEventListener("change", function (e) { year = +e.target.value; render(); });
+  $("catFilter").addEventListener("change", function (e) { catFilter = e.target.value; renderList(); });
+  $("btnCsv").addEventListener("click", exportCsv);
+
+  document.addEventListener("dragover", function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") >= 0) e.preventDefault(); });
+  document.addEventListener("drop", function (e) {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) { e.preventDefault(); scanFiles(e.dataTransfer.files); }
+  });
+
+  render();
+  init();
+})();
+</script>
+
+</body></html>
