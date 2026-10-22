@@ -1,11 +1,11 @@
 /* Service worker: la app funciona sin conexión.
    Sube el número de VERSION cuando cambies archivos para que los móviles se actualicen. */
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL = `gastos-coche-shell-${VERSION}`;
 const RUNTIME = "gastos-coche-runtime";
 const FILES = [
   "./", "index.html", "manifest.webmanifest",
-  "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon.svg"
+  "icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png", "favicon.svg"
 ];
 // Recursos del lector OCR: se guardan la primera vez que se usan.
 const OCR_HOSTS = ["cdn.jsdelivr.net", "tessdata.projectnaptha.com", "unpkg.com"];
