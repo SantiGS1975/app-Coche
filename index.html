@@ -59,6 +59,10 @@ header .sub { color: var(--muted); margin-top: 4px; }
 .btn.danger { color: var(--danger); }
 .btn[disabled] { opacity: .55; cursor: default; }
 .btn.small { min-height: 34px; padding: 6px 12px; font-size: 14px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.btn.small svg { width: 16px; height: 16px; }
+header .btn.primary svg { width: 22px; height: 22px; }
 
 .notice { border: 1px solid var(--line); background: var(--warn-soft); color: var(--warn); padding: 10px 14px; border-radius: 6px; font-size: 14px; }
 .notice.info { background: var(--accent-soft); color: var(--ink); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
@@ -649,6 +653,28 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
   function uid() { return "x" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
   function r2(n) { return Math.round(n * 100) / 100; }
 
+  /* Iconos de los botones (trazo simple, heredan el color del texto) */
+  var ICONS = {
+    camera: '<path d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4z"/><circle cx="12" cy="13.5" r="3.6"/>',
+    image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4.5 4"/>',
+    pencil: '<path d="M4 20l1-4.2L16.6 4.2a2.1 2.1 0 0 1 3 3L8 19z"/><path d="M14.6 6.2l3 3"/>',
+    sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
+    download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>',
+    upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 19.5h14"/>',
+    trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>'
+  };
+  function icon(name) {
+    var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true");
+    s.innerHTML = ICONS[name] || "";
+    return s;
+  }
+  function addIcon(btn, name) { if (btn) btn.insertBefore(icon(name), btn.firstChild); return btn; }
+  function hb(name, attrs) { return addIcon(h("button", attrs), name); }
+
   /* ---------- Almacenamiento (localStorage) ---------- */
   var expenses = [];
   var settings = { useAI: false, apiKey: "", model: DEFAULT_MODEL };
@@ -880,10 +906,10 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
     children.push(h("div", { class: "editor-foot" }, [
       h("div", { class: "sumline", id: "edSum" }),
       h("div", { class: "actions" }, [
-        ed.mode === "edit" ? h("button", { class: "btn danger", type: "button", id: "edDelete", onclick: onDelete, text: "Eliminar" }) : null,
-        ed.mode === "new" ? h("button", { class: "btn", type: "button", text: "Añadir línea", onclick: function () { ed.lines.push({ category: "otros", description: "", amount: "", liters: "" }); renderEditor(); } }) : null,
-        h("button", { class: "btn ghost", type: "button", onclick: closeEditor, text: "Cancelar" }),
-        h("button", { class: "btn primary", type: "button", id: "edSave", onclick: onSave, text: ed.mode === "edit" ? "Guardar cambios" : "Guardar gastos" })
+        ed.mode === "edit" ? hb("trash", { class: "btn danger", type: "button", id: "edDelete", onclick: onDelete, text: "Eliminar" }) : null,
+        ed.mode === "new" ? hb("plus", { class: "btn", type: "button", text: "Añadir línea", onclick: function () { ed.lines.push({ category: "otros", description: "", amount: "", liters: "" }); renderEditor(); } }) : null,
+        hb("x", { class: "btn ghost", type: "button", onclick: closeEditor, text: "Cancelar" }),
+        hb("check", { class: "btn primary", type: "button", id: "edSave", onclick: onSave, text: ed.mode === "edit" ? "Guardar cambios" : "Guardar gastos" })
       ])
     ]));
     if (ed.raw) children.push(h("details", { class: "raw" }, [h("summary", { text: "Ver el texto leído de la foto" }), h("pre", { text: ed.raw })]));
@@ -921,9 +947,9 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
     scanBox([
       h("div", { class: "msg err", role: "alert", text: text }),
       h("div", { class: "actions" }, [
-        h("button", { class: "btn primary", type: "button", text: "Hacer otra foto", onclick: function () { $("cameraInput").click(); } }),
-        h("button", { class: "btn", type: "button", text: "Añadir a mano", onclick: function () { openEditor(blankEditor()); } }),
-        h("button", { class: "btn ghost", type: "button", text: "Cerrar", onclick: function () { $("scanArea").hidden = true; } })
+        hb("camera", { class: "btn primary", type: "button", text: "Hacer otra foto", onclick: function () { $("cameraInput").click(); } }),
+        hb("pencil", { class: "btn", type: "button", text: "Añadir a mano", onclick: function () { openEditor(blankEditor()); } }),
+        hb("x", { class: "btn ghost", type: "button", text: "Cerrar", onclick: function () { $("scanArea").hidden = true; } })
       ])
     ]);
   }
@@ -956,7 +982,7 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
     var token = ++scanToken;
     var bar = h("progress", { max: "1" });
     var msg = h("div", { class: "msg" }, [h("span", { class: "spinner" }), "Leyendo el ticket…"]);
-    var cancel = h("button", { class: "btn small", type: "button", text: "Cancelar", onclick: function () { scanToken++; $("scanArea").hidden = true; } });
+    var cancel = hb("x", { class: "btn small", type: "button", text: "Cancelar", onclick: function () { scanToken++; $("scanArea").hidden = true; } });
     scanBox([msg, bar, cancel]);
     function progress(f, text) {
       if (token !== scanToken) return;
@@ -1106,6 +1132,9 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
   document.addEventListener("dragover", function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") >= 0) e.preventDefault(); });
   document.addEventListener("drop", function (e) { if (e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); scanFiles(e.dataTransfer.files); } });
 
+  addIcon($("btnScan"), "camera"); addIcon($("btnGallery"), "image"); addIcon($("btnManual"), "pencil"); addIcon($("btnSettings"), "sliders");
+  addIcon($("btnCsv"), "download"); addIcon($("btnExport"), "download"); addIcon($("btnImport"), "upload"); addIcon($("btnWipe"), "trash");
+  addIcon($("btnSaveSettings"), "check"); addIcon($("btnInstall"), "download");
   loadAll();
   render();
   setupInstall();
