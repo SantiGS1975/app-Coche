@@ -179,13 +179,15 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
       <div class="sub">Fotografía un ticket o una factura y se apuntan los gastos.</div>
     </div>
     <div class="actions">
-      <button class="btn primary" id="btnScan" type="button">Escanear ticket</button>
+      <button class="btn primary" id="btnScan" type="button">Hacer foto al ticket</button>
+      <button class="btn" id="btnGallery" type="button">Elegir foto</button>
       <button class="btn" id="btnManual" type="button">Añadir a mano</button>
       <button class="btn ghost" id="btnSettings" type="button" aria-label="Ajustes">Ajustes</button>
     </div>
   </header>
 
   <input id="fileInput" type="file" accept="image/*" multiple hidden>
+  <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
   <div id="notice" class="notice" hidden></div>
   <div id="installBar" class="notice info" hidden>
     <span id="installText"></span>
@@ -792,7 +794,7 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
     if (!list.length) {
       box.replaceChildren(h("div", { class: "empty" }, expenses.length ? [h("span", { text: "No hay gastos en esta categoría." })] : [
         h("b", { text: "Todavía no hay gastos" }),
-        h("span", { text: "Pulsa «Escanear ticket» y elige una foto de un ticket de gasolina o de una factura de taller. También puedes añadir un gasto a mano." })
+        h("span", { text: "Pulsa «Hacer foto al ticket» (se abre la cámara) o «Elegir foto» de la galería, de un ticket de gasolina o de una factura de taller. También puedes añadir un gasto a mano." })
       ]));
       return;
     }
@@ -919,7 +921,7 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
     scanBox([
       h("div", { class: "msg err", role: "alert", text: text }),
       h("div", { class: "actions" }, [
-        h("button", { class: "btn primary", type: "button", text: "Probar con otra foto", onclick: function () { $("fileInput").click(); } }),
+        h("button", { class: "btn primary", type: "button", text: "Hacer otra foto", onclick: function () { $("cameraInput").click(); } }),
         h("button", { class: "btn", type: "button", text: "Añadir a mano", onclick: function () { openEditor(blankEditor()); } }),
         h("button", { class: "btn ghost", type: "button", text: "Cerrar", onclick: function () { $("scanArea").hidden = true; } })
       ])
@@ -1056,7 +1058,9 @@ legend { font-family: var(--font-display); font-size: 18px; font-weight: 600; pa
   }
 
   /* ---------- Eventos ---------- */
-  $("btnScan").addEventListener("click", function () { $("fileInput").click(); });
+  $("btnScan").addEventListener("click", function () { $("cameraInput").click(); });
+  $("btnGallery").addEventListener("click", function () { $("fileInput").click(); });
+  $("cameraInput").addEventListener("change", function (e) { var f = Array.prototype.slice.call(e.target.files); e.target.value = ""; scanFiles(f); });
   $("btnManual").addEventListener("click", function () { $("scanArea").hidden = true; openEditor(blankEditor()); });
   $("btnSettings").addEventListener("click", openSettings);
   $("fileInput").addEventListener("change", function (e) { var f = Array.prototype.slice.call(e.target.files); e.target.value = ""; scanFiles(f); });
